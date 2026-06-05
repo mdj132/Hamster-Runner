@@ -5,288 +5,675 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Hamster Runner</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #2b1a0e; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Segoe UI', sans-serif; color: #fff; touch-action: none; }
-  h1 { font-size: clamp(1rem, 4vw, 1.4rem); margin-bottom: 6px; letter-spacing: 2px; color: #f5a623; }
-  #ui { display: flex; gap: clamp(12px, 4vw, 30px); margin-bottom: 6px; font-size: clamp(0.75rem, 3vw, 0.9rem); color: #aaa; }
-  #ui span { color: #fff; font-weight: bold; }
-  #canvasWrap { width: 100%; max-width: 700px; padding: 0 8px; }
-  canvas { width: 100%; height: auto; display: block; border: 2px solid #f5a623; border-radius: 8px; }
-  #msg { margin-top: 10px; font-size: clamp(0.85rem, 3.5vw, 1rem); color: #f5a623; min-height: 1.4em; text-align: center; padding: 0 12px; }
-  #jumpBtn {
-    margin-top: 14px;
-    width: clamp(120px, 40vw, 180px);
-    height: clamp(56px, 14vw, 72px);
-    background: linear-gradient(145deg, #f5a623, #e08800);
-    border: none; border-radius: 50px;
-    color: #fff; font-size: clamp(1.4rem, 6vw, 2rem);
-    font-weight: bold; cursor: pointer;
-    box-shadow: 0 6px 20px rgba(245,166,35,0.45);
-    user-select: none; -webkit-user-select: none;
-    active-transform: scale(0.95);
-  }
-  #jumpBtn:active { transform: scale(0.93); box-shadow: 0 2px 10px rgba(245,166,35,0.3); }
-  #hint { margin-top: 6px; font-size: clamp(0.65rem, 2.5vw, 0.78rem); color: #555; }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{--bg:#1c1208;--panel:rgba(42,28,12,0.92);--gold:#c8922a;--gold2:#e8b84b;--cream:#f0e8d0;--brown:#6b4423;--mid:#8b6040;--light:#d4b896;--red:#c0392b}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',system-ui,sans-serif;color:var(--cream);touch-action:none}
+  #wrap{width:100%;max-width:720px;padding:0 8px;display:flex;flex-direction:column;align-items:center;gap:6px}
+  h1{font-size:clamp(1rem,4vw,1.3rem);letter-spacing:3px;color:var(--gold);font-weight:300;text-transform:uppercase}
+  #hud{display:flex;gap:0;width:100%;max-width:700px;background:var(--panel);border-radius:10px;overflow:hidden;border:1px solid rgba(200,146,42,0.25)}
+  .hud-cell{flex:1;padding:6px 10px;display:flex;flex-direction:column;align-items:center;border-right:1px solid rgba(200,146,42,0.15)}
+  .hud-cell:last-child{border-right:none}
+  .hud-label{font-size:0.6rem;color:var(--mid);letter-spacing:1px;text-transform:uppercase}
+  .hud-val{font-size:clamp(0.85rem,3vw,1rem);font-weight:600;color:var(--gold2)}
+  #lvlbar-wrap{width:100%;max-width:700px;background:rgba(0,0,0,0.3);border-radius:4px;height:5px;overflow:hidden}
+  #lvlbar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));width:0%;transition:width 0.3s}
+  canvas{width:100%;height:auto;display:block;border-radius:10px;border:1px solid rgba(200,146,42,0.3)}
+  #msg{font-size:clamp(0.8rem,3vw,0.95rem);color:var(--gold);text-align:center;min-height:1.2em;padding:0 8px}
+  #jumpBtn{width:clamp(110px,38vw,160px);height:clamp(52px,13vw,68px);background:linear-gradient(145deg,#8b6040,#6b4423);border:1px solid rgba(200,146,42,0.4);border-radius:50px;color:var(--cream);font-size:clamp(1.2rem,5vw,1.8rem);cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.4);user-select:none}
+  #jumpBtn:active{transform:scale(0.93)}
+  #hint{font-size:0.68rem;color:#5a4028;letter-spacing:1px}
+  .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(20,12,4,0.88);z-index:20;padding:20px;gap:14px}
+  .overlay h2{font-size:clamp(1.2rem,5vw,1.8rem);color:var(--gold);letter-spacing:3px;text-transform:uppercase;font-weight:300}
+  .overlay p{color:var(--light);font-size:0.85rem;text-align:center}
+  .btn{padding:10px 28px;background:linear-gradient(145deg,#8b6040,#6b4423);border:1px solid rgba(200,146,42,0.4);border-radius:30px;color:var(--cream);font-size:0.9rem;cursor:pointer;letter-spacing:1px}
+  .btn:hover{background:linear-gradient(145deg,#a07040,#8b5030)}
+  #canvasContainer{position:relative;width:100%;max-width:700px}
+  #hsTable{width:100%;max-width:340px;border-collapse:collapse}
+  #hsTable tr{border-bottom:1px solid rgba(200,146,42,0.1)}
+  #hsTable td{padding:5px 10px;font-size:0.82rem;color:var(--light)}
+  #hsTable td:first-child{color:var(--gold);font-weight:600;width:30px}
+  #hsTable td:last-child{text-align:right;color:var(--gold2)}
+  .hs-new{color:var(--gold2)!important;font-weight:700}
+  #lvlBadge{position:absolute;top:8px;right:10px;background:rgba(20,12,4,0.7);border:1px solid rgba(200,146,42,0.3);border-radius:20px;padding:3px 10px;font-size:0.7rem;color:var(--gold);letter-spacing:1px;z-index:5}
 </style>
 </head>
 <body>
-<h1>🐹 Hamster Runner</h1>
-<div id="ui">
-  <div>Punkte: <span id="scoreEl">0</span></div>
-  <div>Best: <span id="hiEl">0</span></div>
-  <div id="livesEl">❤️❤️❤️</div>
+<div id="wrap">
+  <h1>🐹 Hamster Runner</h1>
+  <div id="hud">
+    <div class="hud-cell"><div class="hud-label">Punkte</div><div class="hud-val" id="scoreEl">0</div></div>
+    <div class="hud-cell"><div class="hud-label">Best</div><div class="hud-val" id="hiEl">0</div></div>
+    <div class="hud-cell"><div class="hud-label">Level</div><div class="hud-val" id="lvlEl">1</div></div>
+    <div class="hud-cell"><div class="hud-label">Leben</div><div class="hud-val" id="livesEl">❤❤❤</div></div>
+  </div>
+  <div id="lvlbar-wrap"><div id="lvlbar"></div></div>
+  <div id="canvasContainer">
+    <canvas id="c"></canvas>
+    <div id="lvlBadge">LEVEL 1</div>
+  </div>
+  <div id="msg">Tippe zum Starten</div>
+  <button id="jumpBtn">🐹</button>
+  <div id="hint">SPACE / Tippen = Springen · Doppelsprung · Durch Hamsterrad laufen = Bonus!</div>
 </div>
-<div id="canvasWrap"><canvas id="c"></canvas></div>
-<div id="msg">Tippe den Button oder SPACE zum Starten</div>
-<button id="jumpBtn">🐹</button>
-<div id="hint">Doppelsprung möglich</div>
 
 <script>
-const c = document.getElementById('c');
-const ctx = c.getContext('2d');
-// Internal resolution
-const CW = 700, CH = 280;
-c.width = CW; c.height = CH;
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+const CW=700,CH=290; c.width=CW; c.height=CH;
+const GROUND=CH-58;
 
-const scoreEl = document.getElementById('scoreEl');
-const hiEl = document.getElementById('hiEl');
-const livesEl = document.getElementById('livesEl');
-const msgEl = document.getElementById('msg');
-const jumpBtn = document.getElementById('jumpBtn');
+// ── STORAGE ───────────────────────────────────────────────────
+function loadHS(){try{return JSON.parse(localStorage.getItem('hamsterHS2')||'[]')}catch{return[]}}
+function saveHS(a){try{localStorage.setItem('hamsterHS2',JSON.stringify(a))}catch{}}
 
-const GROUND = CH - 55;
-const GRAVITY = 0.55;
-const JUMP_FORCE = -13;
+// ── ELEMENTS ──────────────────────────────────────────────────
+const scoreEl=document.getElementById('scoreEl'),hiEl=document.getElementById('hiEl');
+const lvlEl=document.getElementById('lvlEl'),livesEl=document.getElementById('livesEl');
+const lvlBar=document.getElementById('lvlbar'),lvlBadge=document.getElementById('lvlBadge');
+const msgEl=document.getElementById('msg'),jumpBtn=document.getElementById('jumpBtn');
 
-let state = 'idle';
-let score, hi = 0, lives, frame, speed, spawnTimer;
-let p = {};
+// ── LEVELS ────────────────────────────────────────────────────
+const LEVELS=[
+  {n:1,spd:3.8,obsInt:[90,130],scoreNext:120,label:'Käfig-Neuling'},
+  {n:2,spd:4.4,obsInt:[80,115],scoreNext:280,label:'Flauschball'},
+  {n:3,spd:5.0,obsInt:[72,105],scoreNext:500,label:'Backenmacher'},
+  {n:4,spd:5.6,obsInt:[65,95], scoreNext:780,label:'Sonnenblumen-Fan'},
+  {n:5,spd:6.2,obsInt:[58,88], scoreNext:1120,label:'Käfig-Veteran'},
+  {n:6,spd:6.9,obsInt:[52,80], scoreNext:1520,label:'Rad-Meister'},
+  {n:7,spd:7.6,obsInt:[46,72], scoreNext:2000,label:'Sägemehl-Surfer'},
+  {n:8,spd:8.3,obsInt:[40,65], scoreNext:2560,label:'Hamster-Elite'},
+  {n:9,spd:9.1,obsInt:[36,58], scoreNext:3200,label:'Legende'},
+  {n:10,spd:10, obsInt:[30,50],scoreNext:Infinity,label:'Göttlicher Hamster'},
+];
+function cfg(){return LEVELS[Math.min(level-1,9)];}
 
-function resetPlayer() {
-  p = { x: 90, y: GROUND - 36, w: 44, h: 36, vy: 0, jumps: 0, maxJumps: 2, invince: 0, run: 0 };
-}
+// ── STATE ─────────────────────────────────────────────────────
+let state='idle',score=0,hi=0,lives=3,frame=0,level=1;
+let bonusScore=0,comboCount=0,comboTimer=0;
+let p={};
+let obstacles=[],collectibles=[],particles=[],floatTexts=[];
 
-let obstacles = [], particles = [];
-
-const cageBars = Array.from({length: 18}, (_, i) => ({x: i * 42}));
-const sawdust = Array.from({length: 30}, () => ({
-  x: Math.random() * CW, y: GROUND + 8 + Math.random() * 28,
-  w: 8 + Math.random() * 18, h: 4 + Math.random() * 6,
-  col: ['#c8a96e','#b8935a','#d4b47a','#e8c98a'][Math.floor(Math.random()*4)]
+// Sawdust pattern
+const sawdust=Array.from({length:35},()=>({
+  x:Math.random()*CW,y:GROUND+6+Math.random()*30,
+  w:6+Math.random()*16,h:3+Math.random()*5,
+  col:['#b8935a','#c8a96e','#d4b47a','#a07840'][Math.floor(Math.random()*4)]
 }));
 
-function initGame() {
-  score = 0; lives = 3; frame = 0; speed = 4; spawnTimer = 80;
-  obstacles = []; particles = [];
-  resetPlayer();
-  state = 'running';
-  msgEl.textContent = '';
-  updateLives();
-  jumpBtn.textContent = '🦘';
-}
+// Background wheel (purely decorative, always visible)
+let bgWheelRot=0;
 
-function updateLives() { livesEl.textContent = '❤️'.repeat(lives); }
+function resetP(){p={x:85,y:GROUND-38,w:44,h:38,vy:0,jumps:0,invince:0,run:0};}
 
-function spawnObstacle() {
-  const roll = Math.random();
-  if (roll < 0.3) {
-    obstacles.push({type:'bottle', x:CW+20, y:GROUND-70, w:28, h:70});
-  } else if (roll < 0.6) {
-    const h = 34 + Math.random()*20;
-    obstacles.push({type:'roll', x:CW+20, y:GROUND-h, w:30, h:h});
-  } else if (roll < 0.8) {
-    obstacles.push({type:'pebbles', x:CW+20, y:GROUND-22, w:38, h:22});
+// ── SPAWN OBSTACLES ───────────────────────────────────────────
+let spawnT=80,collectT=60;
+
+function spawnObs(){
+  const roll=Math.random();
+  const [mn,mx]=cfg().obsInt;
+  // Occasionally spawn a wheel obstacle
+  if(roll<0.12&&level>=2){
+    spawnWheel();
+  } else if(roll<0.30){
+    obstacles.push({type:'bottle',x:CW+20,y:GROUND-72,w:26,h:72});
+  } else if(roll<0.54){
+    const h=32+Math.random()*22;
+    obstacles.push({type:'roll',x:CW+20,y:GROUND-h,w:30,h});
+  } else if(roll<0.72){
+    obstacles.push({type:'pebbles',x:CW+20,y:GROUND-24,w:40,h:24});
+  } else if(roll<0.87){
+    obstacles.push({type:'seed',x:CW+20,y:GROUND-105-Math.random()*40,w:28,h:18,flap:0});
   } else {
-    obstacles.push({type:'seed', x:CW+20, y:GROUND-100-Math.random()*50, w:30, h:18, flap:0});
+    obstacles.push({type:'double',x:CW+20,y:GROUND-54,w:22,h:54});
   }
+  spawnT=mn+Math.random()*(mx-mn);
 }
 
-function spawnParticles(x, y, color) {
-  for (let i=0; i<10; i++)
-    particles.push({x, y, vx:(Math.random()-0.5)*5, vy:(Math.random()-0.5)*5, life:35, color});
-}
+// ── HAMSTER WHEEL OBSTACLE ────────────────────────────────────
+// The wheel rolls in from the right. Hamster can run THROUGH it
+// (gap at bottom where hamster runs) for bonus, or JUMP OVER it.
+// If hamster enters through the gap → wheel phase, bonus points.
+// If hamster collides with the rim → lose life.
 
-function jump() {
-  if (state !== 'running') { initGame(); return; }
-  if (p.jumps < p.maxJumps) {
-    p.vy = JUMP_FORCE; p.jumps++;
-    spawnParticles(p.x+p.w/2, p.y+p.h, '#f5a623');
-  }
-}
+const WR=62; // wheel radius
+const GAP_HALF=22; // half-width of the bottom gap (where hamster enters)
 
-document.addEventListener('keydown', e => { if (e.code==='Space') { e.preventDefault(); jump(); }});
-jumpBtn.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, {passive:false});
-jumpBtn.addEventListener('click', jump);
-c.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, {passive:false});
-
-function drawHamster(px, py, invince, runFrame) {
-  if (invince > 0 && Math.floor(invince/4)%2===0) return;
-  const bodyW = 44, bodyH = 32;
-  const legPhase = Math.sin(runFrame * 0.35);
-  ctx.fillStyle = '#f0c080';
-  ctx.beginPath(); ctx.ellipse(px-4, py+bodyH*0.6, 7, 5, -0.5, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#f0c080';
-  ctx.beginPath(); ctx.ellipse(px+bodyW/2, py+bodyH/2+2, bodyW/2, bodyH/2, 0, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#fce8c0';
-  ctx.beginPath(); ctx.ellipse(px+bodyW/2+4, py+bodyH/2+5, bodyW*0.28, bodyH*0.3, 0, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#f5b87a';
-  ctx.beginPath(); ctx.ellipse(px+bodyW-4, py+12, 11, 9, 0.3, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#f0c080';
-  ctx.beginPath(); ctx.ellipse(px+bodyW-2, py+10, 20, 17, 0, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#e8a850';
-  ctx.beginPath(); ctx.ellipse(px+bodyW-2, py+2, 8, 6, 0, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#f0c080';
-  ctx.beginPath(); ctx.ellipse(px+bodyW-14, py-4, 7, 9, -0.3, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(px+bodyW+8, py-5, 7, 9, 0.3, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#f0a0b0';
-  ctx.beginPath(); ctx.ellipse(px+bodyW-14, py-4, 4, 6, -0.3, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(px+bodyW+8, py-5, 4, 6, 0.3, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#1a0a00';
-  ctx.beginPath(); ctx.arc(px+bodyW+3, py+8, 5, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px+bodyW-10, py+9, 5, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(px+bodyW+5, py+6, 2, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px+bodyW-8, py+7, 2, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#e8607a';
-  ctx.beginPath(); ctx.ellipse(px+bodyW+14, py+12, 4, 3, 0, 0, Math.PI*2); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1;
-  for (let i=-1; i<=1; i+=2) {
-    ctx.beginPath(); ctx.moveTo(px+bodyW+14, py+13); ctx.lineTo(px+bodyW+30, py+12+i*4); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(px+bodyW+14, py+13); ctx.lineTo(px+bodyW+30, py+15+i*3); ctx.stroke();
-  }
-  ctx.fillStyle = '#e8a850';
-  ctx.beginPath(); ctx.ellipse(px+bodyW-8, py+bodyH+5+legPhase*4, 6, 7, 0.2, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(px+bodyW-20, py+bodyH+5-legPhase*4, 6, 7, -0.2, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#f0c080';
-  ctx.beginPath(); ctx.ellipse(px+10, py+bodyH+4+legPhase*3, 7, 6, 0, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(px+22, py+bodyH+4-legPhase*3, 7, 6, 0, 0, Math.PI*2); ctx.fill();
-}
-
-function drawObstacle(o) {
-  if (o.type === 'bottle') {
-    ctx.fillStyle = '#a8d8ea';
-    ctx.beginPath(); ctx.roundRect(o.x, o.y+12, o.w, o.h-12, 4); ctx.fill();
-    ctx.fillStyle = '#78bcd4'; ctx.fillRect(o.x+4, o.y+20, o.w-8, o.h-30);
-    ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.roundRect(o.x+4, o.y, o.w-8, 16, 3); ctx.fill();
-    ctx.fillStyle = 'rgba(100,180,220,0.4)'; ctx.fillRect(o.x+4, o.y+30, o.w-8, o.h-42);
-    ctx.fillStyle='#fff'; ctx.font='8px sans-serif'; ctx.textAlign='center';
-    ctx.fillText('H₂O', o.x+o.w/2, o.y+o.h*0.55);
-  } else if (o.type === 'roll') {
-    ctx.fillStyle = '#f5f0e8'; ctx.beginPath(); ctx.roundRect(o.x, o.y, o.w, o.h, 5); ctx.fill();
-    ctx.strokeStyle = '#ddd'; ctx.lineWidth=1;
-    for(let i=1;i<4;i++){ctx.beginPath();ctx.moveTo(o.x,o.y+i*o.h/4);ctx.lineTo(o.x+o.w,o.y+i*o.h/4);ctx.stroke();}
-    ctx.fillStyle='#c8b89a'; ctx.beginPath(); ctx.ellipse(o.x+o.w/2,o.y+o.h/2,8,8,0,0,Math.PI*2); ctx.fill();
-  } else if (o.type === 'pebbles') {
-    const cols=['#8e8e8e','#a0a0a0','#707070','#b0b0b0'];
-    [{x:0,y:8,r:9},{x:14,y:2,r:10},{x:28,y:6,r:9},{x:6,y:14,r:7},{x:20,y:13,r:8}].forEach((pb,i)=>{
-      ctx.fillStyle=cols[i%cols.length];
-      ctx.beginPath(); ctx.ellipse(o.x+pb.x+pb.r/2,o.y+pb.y,pb.r,pb.r*0.75,0,0,Math.PI*2); ctx.fill();
-    });
-  } else if (o.type === 'seed') {
-    o.flap=(o.flap||0)+0.18;
-    const bob=Math.sin(o.flap)*5;
-    ctx.fillStyle='#5ab245';
-    ctx.beginPath(); ctx.ellipse(o.x+o.w/2-12,o.y+bob+o.h/2,14,7,-0.4,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(o.x+o.w/2+12,o.y+bob+o.h/2,14,7,0.4,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#3a2a0a'; ctx.beginPath(); ctx.ellipse(o.x+o.w/2,o.y+bob+o.h/2,8,11,0.2,0,Math.PI*2); ctx.fill();
-    o.y+=Math.sin(o.flap)*0.5;
-  }
-}
-
-function drawBackground() {
-  const wallGrad=ctx.createLinearGradient(0,0,0,GROUND);
-  wallGrad.addColorStop(0,'#f5e6c8'); wallGrad.addColorStop(1,'#e8d4a8');
-  ctx.fillStyle=wallGrad; ctx.fillRect(0,0,CW,GROUND);
-  ctx.strokeStyle='rgba(150,150,180,0.25)'; ctx.lineWidth=3;
-  cageBars.forEach(bar=>{
-    const bx=(bar.x-frame*speed*0.05+CW*4)%CW;
-    ctx.beginPath(); ctx.moveTo(bx,0); ctx.lineTo(bx,GROUND); ctx.stroke();
+function spawnWheel(){
+  obstacles.push({
+    type:'wheel',
+    x:CW+WR+10,
+    cx:CW+WR+10,       // center x
+    cy:GROUND-WR,      // center y (rim sits on ground)
+    r:WR,
+    rot:0,
+    phase:'approach',  // approach | inside | done
+    insideT:0,
+    bonusGiven:0,
+    w:WR*2, h:WR*2,    // bounding box for removal logic
   });
-  ctx.strokeStyle='rgba(150,150,180,0.15)'; ctx.lineWidth=2;
-  [40,120,200].forEach(y=>{ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();});
-  const wx=CW-120, wy=GROUND-80;
-  ctx.strokeStyle='rgba(180,120,60,0.3)'; ctx.lineWidth=6;
-  ctx.beginPath(); ctx.arc(wx,wy,60,0,Math.PI*2); ctx.stroke();
-  ctx.lineWidth=3;
-  for(let i=0;i<8;i++){
-    const a=(i/8)*Math.PI*2+frame*0.03;
-    ctx.beginPath(); ctx.moveTo(wx,wy); ctx.lineTo(wx+Math.cos(a)*58,wy+Math.sin(a)*58); ctx.stroke();
+}
+
+function wheelGapY(w){
+  // The gap is at the bottom of the wheel inner surface
+  return w.cy+w.r-12; // floor of gap
+}
+
+// Check if hamster center is inside the wheel circle
+function inWheel(w){
+  const px=p.x+p.w/2, py=p.y+p.h/2;
+  const dx=px-w.cx, dy=py-w.cy;
+  return Math.sqrt(dx*dx+dy*dy)<w.r-8;
+}
+
+// Check if hamster hits the rim (not the gap)
+function hitsWheelRim(w){
+  const px=p.x+p.w/2, py=p.y+p.h*0.6;
+  const dx=px-w.cx, dy=py-w.cy;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  // Rim zone
+  if(dist>w.r-14&&dist<w.r+8){
+    // Is this the gap area? gap is at bottom center
+    const angle=Math.atan2(dy,dx); // angle from center
+    const bottomAngle=Math.PI/2;   // straight down
+    const gapAngle=Math.asin(GAP_HALF/w.r);
+    const diff=Math.abs(angle-bottomAngle);
+    if(diff<gapAngle+0.15) return false; // in gap, safe
+    return true;
   }
-  ctx.fillStyle='rgba(180,120,60,0.3)'; ctx.beginPath(); ctx.arc(wx,wy,8,0,Math.PI*2); ctx.fill();
-  const sawGrad=ctx.createLinearGradient(0,GROUND,0,CH);
-  sawGrad.addColorStop(0,'#c8a96e'); sawGrad.addColorStop(1,'#a07840');
-  ctx.fillStyle=sawGrad; ctx.fillRect(0,GROUND,CW,CH-GROUND);
+  return false;
+}
+
+// ── COLLECTIBLES ──────────────────────────────────────────────
+function spawnCollectible(){
+  const types=['sunflower','acorn','berry','star'];
+  const t=types[Math.floor(Math.random()*types.length)];
+  const flying=Math.random()<0.4;
+  const y=flying?GROUND-95-Math.random()*45:GROUND-38-Math.random()*18;
+  collectibles.push({type:t,x:CW+20,y,w:24,h:24,bob:Math.random()*Math.PI*2,collected:false});
+  collectT=55+Math.random()*70;
+}
+
+// ── PARTICLES & FLOAT TEXT ────────────────────────────────────
+function burst(x,y,col,n=10){
+  for(let i=0;i<n;i++) particles.push({x,y,vx:(Math.random()-0.5)*5,vy:-1-Math.random()*4,life:30,col});
+}
+function floatText(x,y,txt,col='#e8b84b'){
+  floatTexts.push({x,y,txt,col,life:50,vy:-1.1});
+}
+
+// ── DRAW: BACKGROUND ─────────────────────────────────────────
+function drawBg(){
+  const wg=ctx.createLinearGradient(0,0,0,GROUND);
+  wg.addColorStop(0,'#e8dcc8');wg.addColorStop(1,'#d4c4a0');
+  ctx.fillStyle=wg; ctx.fillRect(0,0,CW,GROUND);
+
+  // Cage bars
+  for(let i=0;i<19;i++){
+    const bx=(i*38-frame*cfg().spd*0.04+CW*4)%CW;
+    ctx.fillStyle='rgba(140,130,160,0.18)'; ctx.fillRect(bx,0,2.5,GROUND);
+  }
+  [55,140,210].forEach(y=>{ctx.fillStyle='rgba(140,130,160,0.1)';ctx.fillRect(0,y,CW,2);});
+
+  // Background decorative wheel (top right, small)
+  drawWheelShape(CW-80,60,38,bgWheelRot,false,'rgba(160,110,60,0.22)','rgba(120,80,40,0.15)');
+
+  // Floor
+  const fg=ctx.createLinearGradient(0,GROUND,0,CH);
+  fg.addColorStop(0,'#c0956a');fg.addColorStop(1,'#8a6035');
+  ctx.fillStyle=fg; ctx.fillRect(0,GROUND,CW,CH-GROUND);
+  ctx.fillStyle='rgba(0,0,0,0.15)'; ctx.fillRect(0,GROUND,CW,4);
+
+  // Sawdust
   sawdust.forEach(s=>{
-    const sx=(s.x-frame*speed*0.6+CW*10)%CW;
-    ctx.fillStyle=s.col; ctx.beginPath(); ctx.ellipse(sx,s.y,s.w/2,s.h/2,0.4,0,Math.PI*2); ctx.fill();
+    const sx=(s.x-frame*cfg().spd*0.5+CW*12)%CW;
+    ctx.fillStyle=s.col; ctx.beginPath();
+    ctx.ellipse(sx,s.y,s.w/2,s.h/2,0.4,0,Math.PI*2); ctx.fill();
   });
-  ctx.strokeStyle='#b08040'; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.moveTo(0,GROUND); ctx.lineTo(CW,GROUND); ctx.stroke();
 }
 
-function drawParticles() {
-  particles.forEach(pt=>{
-    ctx.globalAlpha=pt.life/35; ctx.fillStyle=pt.color;
-    ctx.beginPath(); ctx.arc(pt.x,pt.y,4,0,Math.PI*2); ctx.fill();
+// ── DRAW: WHEEL SHAPE (reusable) ──────────────────────────────
+function drawWheelShape(cx,cy,r,rot,withGap,rimCol,spokeCol){
+  ctx.save();
+  // Shadow
+  ctx.shadowColor='rgba(0,0,0,0.3)'; ctx.shadowBlur=12;
+
+  // Support post
+  ctx.fillStyle='#5a3a1a';
+  ctx.fillRect(cx-4,cy+r-2,8,36);
+  ctx.fillRect(cx-18,cy+r+28,36,8);
+
+  // Outer rim
+  ctx.strokeStyle=rimCol||'#7a5030'; ctx.lineWidth=8;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+  ctx.strokeStyle='#a07848'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(cx,cy,r-2,0,Math.PI*2); ctx.stroke();
+  ctx.strokeStyle='rgba(60,30,10,0.4)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(cx,cy,r+2,0,Math.PI*2); ctx.stroke();
+
+  // Running surface ring
+  ctx.strokeStyle='#6a4828'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.arc(cx,cy,r-11,0,Math.PI*2); ctx.stroke();
+
+  ctx.shadowBlur=0;
+
+  // Spokes
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot);
+  const nSpokes=8;
+  for(let i=0;i<nSpokes;i++){
+    const a=(i/nSpokes)*Math.PI*2;
+    const x1=Math.cos(a)*(r-11),y1=Math.sin(a)*(r-11);
+    ctx.strokeStyle=spokeCol||'#7a5530'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(x1,y1); ctx.stroke();
+    ctx.strokeStyle='rgba(180,140,80,0.4)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(x1,y1); ctx.stroke();
+  }
+  // Cross braces
+  for(let i=0;i<nSpokes;i++){
+    const a1=(i/nSpokes)*Math.PI*2,a2=((i+1)/nSpokes)*Math.PI*2;
+    const m=0.58;
+    ctx.strokeStyle='rgba(100,65,30,0.45)'; ctx.lineWidth=1.8;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a1)*(r-11)*m,Math.sin(a1)*(r-11)*m);
+    ctx.lineTo(Math.cos(a2)*(r-11)*m,Math.sin(a2)*(r-11)*m);
+    ctx.stroke();
+  }
+  // Tread marks
+  for(let i=0;i<16;i++){
+    const a=(i/16)*Math.PI*2;
+    ctx.strokeStyle='rgba(80,48,18,0.45)'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a)*(r-11),Math.sin(a)*(r-11));
+    ctx.lineTo(Math.cos(a)*(r-4),Math.sin(a)*(r-4));
+    ctx.stroke();
+  }
+  // Hub
+  ctx.fillStyle='#3a2008'; ctx.beginPath(); ctx.arc(0,0,10,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#8a6040'; ctx.beginPath(); ctx.arc(0,0,6,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#c8a060'; ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // Gap highlight (bottom opening)
+  if(withGap){
+    ctx.save();
+    ctx.strokeStyle='rgba(220,180,80,0.55)'; ctx.lineWidth=3;
+    ctx.setLineDash([5,4]);
+    // Draw arc for the gap
+    const gAngle=Math.asin(GAP_HALF/r);
+    ctx.beginPath();
+    ctx.arc(cx,cy,r-6,Math.PI/2-gAngle,Math.PI/2+gAngle);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// ── DRAW: WHEEL OBSTACLE ──────────────────────────────────────
+function drawWheelObs(w){
+  // Glow when hamster is inside
+  if(w.phase==='inside'){
+    ctx.save();
+    ctx.strokeStyle=`rgba(220,180,60,${0.4+Math.sin(w.insideT*0.18)*0.3})`;
+    ctx.lineWidth=5; ctx.shadowColor='#e8b84b'; ctx.shadowBlur=18;
+    ctx.beginPath(); ctx.arc(w.cx,w.cy,w.r+5,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+  drawWheelShape(w.cx,w.cy,w.r,w.rot,true);
+
+  // "Enter!" arrow when approaching
+  if(w.phase==='approach'&&w.cx<CW-20&&w.cx>p.x+200){
+    ctx.save();
+    ctx.fillStyle=`rgba(220,180,60,${0.6+Math.sin(frame*0.12)*0.4})`;
+    ctx.font='bold 12px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText('⬇ Hier rein!',w.cx,w.cy-w.r-16);
+    ctx.restore();
+  }
+}
+
+// ── DRAW: OBSTACLES ───────────────────────────────────────────
+function drawObs(o){
+  if(o.type==='wheel'){drawWheelObs(o);return;}
+  ctx.save();
+  if(o.type==='bottle'){
+    const g=ctx.createLinearGradient(o.x,0,o.x+o.w,0);
+    g.addColorStop(0,'#90c8d8');g.addColorStop(0.5,'#b8e0ee');g.addColorStop(1,'#78b0c0');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.roundRect(o.x,o.y+14,o.w,o.h-14,4); ctx.fill();
+    ctx.fillStyle='rgba(80,160,200,0.22)'; ctx.beginPath(); ctx.roundRect(o.x+3,o.y+28,o.w-6,o.h-40,2); ctx.fill();
+    ctx.fillStyle='#b03028'; ctx.beginPath(); ctx.roundRect(o.x+4,o.y,o.w-8,17,3); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.28)'; ctx.fillRect(o.x+5,o.y+20,4,o.h-35);
+    ctx.fillStyle='#7a9098'; ctx.font='7px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('H₂O',o.x+o.w/2,o.y+o.h*0.6);
+  } else if(o.type==='roll'){
+    ctx.fillStyle='#ede8e0'; ctx.beginPath(); ctx.roundRect(o.x,o.y,o.w,o.h,4); ctx.fill();
+    ctx.strokeStyle='#c8c0b0'; ctx.lineWidth=0.8;
+    for(let i=1;i<5;i++){ctx.beginPath();ctx.moveTo(o.x,o.y+i*o.h/5);ctx.lineTo(o.x+o.w,o.y+i*o.h/5);ctx.stroke();}
+    ctx.fillStyle='#b8a888'; ctx.beginPath(); ctx.arc(o.x+o.w/2,o.y+o.h/2,7,7,0,0,Math.PI*2); ctx.fill();
+  } else if(o.type==='pebbles'){
+    [{x:0,y:10,rx:10,ry:8},{x:14,y:3,rx:11,ry:9},{x:27,y:8,rx:9,ry:8},{x:7,y:16,rx:7,ry:6},{x:21,y:15,rx:8,ry:6}].forEach((pb,i)=>{
+      ctx.fillStyle=['#8a8880','#9a9890','#787674','#a0a09a'][i%4];
+      ctx.beginPath(); ctx.ellipse(o.x+pb.x+pb.rx*0.5,o.y+pb.y,pb.rx,pb.ry,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.15)';
+      ctx.beginPath(); ctx.ellipse(o.x+pb.x+pb.rx*0.3,o.y+pb.y-2,pb.rx*0.4,pb.ry*0.35,-0.4,0,Math.PI*2); ctx.fill();
+    });
+  } else if(o.type==='seed'){
+    o.flap=(o.flap||0)+0.15;
+    const by=Math.sin(o.flap)*4;
+    ctx.fillStyle='#4a8035';
+    ctx.beginPath(); ctx.ellipse(o.x+o.w/2-11,o.y+by+o.h/2,13,6,-0.35,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(o.x+o.w/2+11,o.y+by+o.h/2,13,6,0.35,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2a1a08'; ctx.beginPath(); ctx.ellipse(o.x+o.w/2,o.y+by+o.h/2,7,10,0.15,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#5a3a18'; ctx.beginPath(); ctx.ellipse(o.x+o.w/2-1,o.y+by+o.h/2-1,3.5,5.5,0.15,0,Math.PI*2); ctx.fill();
+    o.y+=Math.sin(o.flap)*0.4;
+  } else if(o.type==='double'){
+    ctx.fillStyle='#6a4820'; ctx.beginPath(); ctx.roundRect(o.x,o.y,o.w,o.h*0.42,3); ctx.fill();
+    ctx.fillStyle='#7a5830'; ctx.beginPath(); ctx.roundRect(o.x,o.y+o.h*0.58,o.w,o.h*0.42,3); ctx.fill();
+    ctx.strokeStyle='rgba(200,146,42,0.35)'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(o.x,o.y+o.h/2); ctx.lineTo(o.x+o.w,o.y+o.h/2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  ctx.restore();
+}
+
+// ── DRAW: COLLECTIBLES ────────────────────────────────────────
+function drawCollectible(co){
+  co.bob+=0.08;
+  const by=Math.sin(co.bob)*4;
+  ctx.save(); ctx.shadowColor='rgba(200,180,80,0.5)'; ctx.shadowBlur=10;
+  if(co.type==='sunflower'){
+    for(let i=0;i<8;i++){
+      ctx.fillStyle='#d4a020'; ctx.save();
+      ctx.translate(co.x+12,co.y+by+12); ctx.rotate(i*Math.PI/4);
+      ctx.beginPath(); ctx.ellipse(0,-9,4,7,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+    }
+    ctx.fillStyle='#3a2008'; ctx.beginPath(); ctx.arc(co.x+12,co.y+by+12,7,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#5a3818'; ctx.beginPath(); ctx.arc(co.x+12,co.y+by+12,4,0,Math.PI*2); ctx.fill();
+  } else if(co.type==='acorn'){
+    ctx.fillStyle='#6a4018'; ctx.beginPath(); ctx.ellipse(co.x+12,co.y+by+14,7,9,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#8a6030'; ctx.beginPath(); ctx.ellipse(co.x+12,co.y+by+7,9,6,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#6a4828'; ctx.fillRect(co.x+11,co.y+by,2,7);
+  } else if(co.type==='berry'){
+    [[0,0,'#c03848'],[10,2,'#a82838'],[5,9,'#b83040']].forEach(([dx,dy,cl])=>{
+      ctx.fillStyle=cl; ctx.beginPath(); ctx.arc(co.x+6+dx,co.y+by+8+dy,6,0,Math.PI*2); ctx.fill();
+    });
+    ctx.fillStyle='#3a6020'; ctx.fillRect(co.x+11,co.y+by,2,8);
+  } else if(co.type==='star'){
+    ctx.fillStyle='#d4b820'; ctx.save();
+    ctx.translate(co.x+12,co.y+by+12); ctx.beginPath();
+    for(let i=0;i<5;i++){
+      const a=-Math.PI/2+i*Math.PI*2/5, b=a+Math.PI/5;
+      i===0?ctx.moveTo(Math.cos(a)*11,Math.sin(a)*11):ctx.lineTo(Math.cos(a)*11,Math.sin(a)*11);
+      ctx.lineTo(Math.cos(b)*5,Math.sin(b)*5);
+    }
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  ctx.restore();
+}
+
+// ── DRAW: HAMSTER ─────────────────────────────────────────────
+function drawHamster(px,py,inv,run){
+  if(inv>0&&Math.floor(inv/4)%2===0) return;
+  const lp=Math.sin(run*0.3)*0.4;
+  ctx.save();
+  // Tail
+  ctx.fillStyle='#e8c88a';
+  ctx.beginPath(); ctx.ellipse(px-2,py+22,6,4,-0.5,0,Math.PI*2); ctx.fill();
+  // Body
+  ctx.fillStyle='#d4a870';
+  ctx.beginPath(); ctx.ellipse(px+22,py+20,22,18,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,0.05)';
+  ctx.beginPath(); ctx.ellipse(px+18,py+24,18,12,0,0,Math.PI*2); ctx.fill();
+  // Belly
+  ctx.fillStyle='#eedcaa';
+  ctx.beginPath(); ctx.ellipse(px+24,py+22,14,11,0,0,Math.PI*2); ctx.fill();
+  // Cheeks
+  ctx.fillStyle='#e0b880';
+  ctx.beginPath(); ctx.ellipse(px+42,py+14,11,9,0.25,0,Math.PI*2); ctx.fill();
+  // Head
+  ctx.fillStyle='#d4a870';
+  ctx.beginPath(); ctx.ellipse(px+40,py+11,19,16,0,0,Math.PI*2); ctx.fill();
+  // Forehead
+  ctx.fillStyle='#c09050';
+  ctx.beginPath(); ctx.ellipse(px+40,py+2,8,6,0,0,Math.PI*2); ctx.fill();
+  // Ears
+  [[px+28,py-3,-0.3],[px+48,py-4,0.3]].forEach(([ex,ey,tilt])=>{
+    ctx.fillStyle='#d4a870'; ctx.beginPath(); ctx.ellipse(ex,ey,7,9,tilt,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#e8a0b0'; ctx.beginPath(); ctx.ellipse(ex,ey,4,6,tilt,0,Math.PI*2); ctx.fill();
   });
-  ctx.globalAlpha=1;
+  // Eyes
+  [[px+37,py+9],[px+50,py+8]].forEach(([ex,ey])=>{
+    ctx.fillStyle='#1a0c04'; ctx.beginPath(); ctx.arc(ex,ey,4.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(ex+1.5,ey-1.5,1.8,0,Math.PI*2); ctx.fill();
+  });
+  // Nose
+  ctx.fillStyle='#c05870';
+  ctx.beginPath(); ctx.ellipse(px+58,py+13,4,3,0,0,Math.PI*2); ctx.fill();
+  // Whiskers
+  ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=0.8;
+  [[-3],[0],[4]].forEach(([dy])=>{
+    ctx.beginPath(); ctx.moveTo(px+58,py+13); ctx.lineTo(px+74,py+10+dy); ctx.stroke();
+  });
+  // Legs
+  [[px+34,py+36+lp*5],[px+22,py+36-lp*5],[px+14,py+35+lp*4],[px+28,py+35-lp*4]].forEach(([lx,ly],i)=>{
+    ctx.fillStyle=i%2===0?'#c89050':'#d4a870';
+    ctx.beginPath(); ctx.ellipse(lx,ly,6,7,0,0,Math.PI*2); ctx.fill();
+  });
+  ctx.restore();
 }
 
-function collides(a,b){
-  const m=8;
-  return a.x+m<b.x+b.w&&a.x+a.w-m>b.x&&a.y+m<b.y+b.h&&a.y+a.h-m>b.y;
-}
-
-function update() {
+// ── UPDATE ────────────────────────────────────────────────────
+function update(){
   if(state!=='running') return;
-  frame++; score=Math.floor(frame/6);
+  frame++;
+  const c2=cfg();
+  const base=Math.floor(frame/6);
+  score=base+bonusScore;
   scoreEl.textContent=score;
   if(score>hi){hi=score;hiEl.textContent=hi;}
-  speed=4+Math.floor(score/120)*0.4;
-  p.vy+=GRAVITY; p.y+=p.vy;
+
+  bgWheelRot-=c2.spd*0.01;
+
+  // Level up
+  if(level<10&&score>=c2.scoreNext){
+    level=Math.min(10,level+1);
+    lvlEl.textContent=level;
+    lvlBadge.textContent='LEVEL '+level;
+    floatText(CW/2,GROUND/2,'LEVEL '+level+' 🔥','#e8b84b');
+    burst(CW/2,GROUND/2,'#e8b84b',20);
+  }
+  // Level bar
+  const prev=LEVELS[Math.max(0,level-2)]?.scoreNext||0;
+  const next=LEVELS[level-1]?.scoreNext||score;
+  const pct=level===10?100:Math.min(100,((score-prev)/(next-prev))*100);
+  lvlBar.style.width=pct+'%';
+
+  // Player physics
+  p.vy+=0.56; p.y+=p.vy;
   if(p.y>=GROUND-p.h){p.y=GROUND-p.h;p.vy=0;p.jumps=0;}
   if(p.invince>0) p.invince--;
   p.run++;
-  spawnTimer--;
-  if(spawnTimer<=0){spawnObstacle();spawnTimer=65+Math.random()*55-Math.min(score/12,25);}
-  obstacles.forEach(o=>o.x-=speed);
-  obstacles=obstacles.filter(o=>o.x>-120);
-  particles.forEach(pt=>{pt.x+=pt.vx;pt.y+=pt.vy;pt.life--;});
+  if(comboTimer>0) comboTimer--; else comboCount=0;
+
+  // Spawn
+  spawnT--;
+  if(spawnT<=0) spawnObs();
+  collectT--;
+  if(collectT<=0) spawnCollectible();
+
+  // Move all obstacles
+  const spd=c2.spd;
+  obstacles.forEach(o=>{
+    if(o.type==='wheel'){
+      o.cx-=spd; o.x=o.cx-o.r;
+      // Spin faster when hamster is inside
+      o.rot-=spd*(o.phase==='inside'?0.14:0.05);
+      if(o.phase==='inside') o.insideT++;
+    } else {
+      o.x-=spd;
+    }
+  });
+  obstacles=obstacles.filter(o=>o.type==='wheel'?o.cx>-WR-20:o.x>-80);
+
+  // Move collectibles
+  collectibles.forEach(co=>co.x-=spd*0.9);
+  collectibles=collectibles.filter(co=>co.x>-60&&!co.collected);
+
+  // Particles
+  particles.forEach(pt=>{pt.x+=pt.vx;pt.y+=pt.vy;pt.vy+=0.18;pt.life--;});
   particles=particles.filter(pt=>pt.life>0);
-  if(p.invince===0){
-    for(let o of obstacles){
-      if(collides({x:p.x,y:p.y,w:p.w,h:p.h},o)){
-        spawnParticles(p.x+p.w/2,p.y+p.h/2,'#f5a623');
+  floatTexts.forEach(ft=>{ft.y+=ft.vy;ft.life--;});
+  floatTexts=floatTexts.filter(ft=>ft.life>0);
+
+  // ── WHEEL COLLISION LOGIC ─────────────────────────────────
+  obstacles.forEach(o=>{
+    if(o.type!=='wheel') return;
+    if(o.phase==='done') return;
+
+    if(o.phase==='approach'){
+      // Check if hamster enters through the gap (bottom)
+      if(inWheel(o)){
+        // Entered through gap → bonus phase!
+        o.phase='inside';
+        floatText(o.cx,o.cy-o.r-20,'🎉 HAMSTERRAD BONUS!','#e8b84b');
+        burst(o.cx,o.cy,'#e8b84b',16);
+      } else if(p.invince===0&&hitsWheelRim(o)){
+        // Hit rim → ouch
+        burst(p.x+p.w/2,p.y+p.h/2,'#c03028');
         lives--; updateLives(); p.invince=90;
-        if(lives<=0){
-          state='gameover';
-          jumpBtn.textContent='🐹';
-          msgEl.textContent='💀 Game Over! '+score+' Punkte – Nochmal?';
-        }
+        if(lives<=0){state='gameover';showGameOver();}
+      }
+    }
+
+    if(o.phase==='inside'){
+      // Give bonus every 12 frames
+      if(o.insideT%12===1){
+        const pts=level*3;
+        o.bonusGiven+=pts; bonusScore+=pts;
+        floatText(o.cx,o.cy-o.r-10,'+'+pts,'#e8b84b');
+      }
+      // Exit wheel
+      if(!inWheel(o)){
+        o.phase='done';
+        const total=o.bonusGiven;
+        floatText(p.x+p.w/2,p.y-20,'TOTAL +'+total+' 🏆','#e8b84b');
+        burst(p.x+p.w/2,p.y,'#e8b84b',20);
+      }
+    }
+  });
+
+  // ── REGULAR OBSTACLE COLLISION ────────────────────────────
+  if(p.invince===0){
+    for(const o of obstacles){
+      if(o.type==='wheel') continue; // handled above
+      const margin=10;
+      if(p.x+margin<o.x+o.w&&p.x+p.w-margin>o.x&&p.y+8<o.y+o.h&&p.y+p.h-8>o.y){
+        burst(p.x+p.w/2,p.y+p.h/2,'#c03028');
+        lives--; updateLives(); p.invince=90; comboCount=0;
+        if(lives<=0){state='gameover';showGameOver();}
         break;
       }
     }
   }
+
+  // ── COLLECTIBLE COLLISION ─────────────────────────────────
+  collectibles.forEach(co=>{
+    if(co.collected) return;
+    if(p.x+8<co.x+co.w&&p.x+p.w-8>co.x&&p.y+8<co.y+co.h&&p.y+p.h-8>co.y){
+      co.collected=true;
+      comboCount++; comboTimer=90;
+      const base2={sunflower:15,acorn:10,berry:8,star:25}[co.type]||10;
+      const pts=base2*(1+Math.floor(comboCount/3));
+      bonusScore+=pts;
+      burst(co.x+12,co.y+12,'#d4b020',12);
+      floatText(co.x,co.y-10,comboCount>2?`COMBO x${comboCount}! +${pts}`:`+${pts}`,'#e8b84b');
+    }
+  });
 }
 
-function draw() {
+// ── DRAW ──────────────────────────────────────────────────────
+function draw(){
   ctx.clearRect(0,0,CW,CH);
-  drawBackground();
-  obstacles.forEach(drawObstacle);
+  drawBg();
+  collectibles.filter(co=>!co.collected).forEach(drawCollectible);
+  obstacles.forEach(drawObs);
   drawHamster(p.x,p.y,p.invince,p.run);
-  drawParticles();
-  ctx.fillStyle='rgba(0,0,0,0.35)';
-  ctx.beginPath(); ctx.roundRect(CW/2-55,8,110,28,6); ctx.fill();
-  ctx.fillStyle='#f5a623'; ctx.font='bold 15px Segoe UI'; ctx.textAlign='center';
-  ctx.fillText('🌻 '+score+' Punkte',CW/2,28); ctx.textAlign='left';
+
+  // Particles
+  particles.forEach(pt=>{
+    ctx.globalAlpha=pt.life/30; ctx.fillStyle=pt.col;
+    ctx.beginPath(); ctx.arc(pt.x,pt.y,3.5,0,Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // Float texts
+  ctx.textAlign='center';
+  floatTexts.forEach(ft=>{
+    ctx.globalAlpha=Math.min(1,ft.life/18);
+    ctx.fillStyle=ft.col; ctx.font='bold 13px Segoe UI';
+    ctx.fillText(ft.txt,ft.x,ft.y);
+  });
+  ctx.globalAlpha=1; ctx.textAlign='left';
+
+  // Combo
+  if(comboCount>1&&comboTimer>0){
+    ctx.save(); ctx.fillStyle=`rgba(220,180,60,${Math.min(1,comboTimer/25)})`;
+    ctx.font=`bold ${12+comboCount}px Segoe UI`; ctx.textAlign='center';
+    ctx.fillText('COMBO x'+comboCount,p.x+p.w/2,p.y-12); ctx.restore();
+  }
+
   if(state==='idle'){
-    ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(0,0,CW,CH);
-    ctx.fillStyle='#f5a623'; ctx.font='bold 30px Segoe UI'; ctx.textAlign='center';
+    ctx.fillStyle='rgba(20,10,4,0.55)'; ctx.fillRect(0,0,CW,CH);
+    ctx.fillStyle='#c8922a'; ctx.font='bold 28px Segoe UI'; ctx.textAlign='center';
     ctx.fillText('🐹 HAMSTER RUNNER',CW/2,CH/2-22);
-    ctx.fillStyle='#fff'; ctx.font='16px Segoe UI';
-    ctx.fillText('Tippe zum Starten',CW/2,CH/2+16);
+    ctx.fillStyle='#d4b896'; ctx.font='14px Segoe UI';
+    ctx.fillText('Durch das Hamsterrad laufen = Bonus!',CW/2,CH/2+10);
+    ctx.fillText('Tippen zum Starten',CW/2,CH/2+32);
     ctx.textAlign='left';
   }
+}
+
+// ── GAME OVER ────────────────────────────────────────────────
+function showGameOver(){
+  jumpBtn.textContent='🐹';
+  let hs=loadHS();
+  const isNew=score>0&&(hs.length<10||score>hs[hs.length-1]?.score);
+  if(isNew){hs.push({score,level});hs.sort((a,b)=>b.score-a.score);hs=hs.slice(0,10);saveHS(hs);}
+  const wrap=document.getElementById('canvasContainer');
+  const ov=document.createElement('div');
+  ov.className='overlay'; ov.id='gameOverlay';
+  ov.innerHTML=`
+    <h2>Game Over</h2>
+    <p>Punkte: <strong style="color:var(--gold2);font-size:1.2em">${score}</strong> &nbsp;·&nbsp; Level ${level}</p>
+    ${isNew?'<p style="color:var(--gold)">🏆 Neuer Highscore!</p>':''}
+    <table id="hsTable">${hs.map((e,i)=>`<tr><td>${i+1}.</td><td>${'⭐'.repeat(Math.min(e.level,5))} Lvl ${e.level}</td><td${isNew&&e.score===score&&i===hs.findIndex(x=>x.score===score)?' class="hs-new"':''}>${e.score}</td></tr>`).join('')}</table>
+    <button class="btn" id="restartBtn">Nochmal spielen</button>`;
+  wrap.appendChild(ov);
+  document.getElementById('restartBtn').addEventListener('click',()=>{ov.remove();initGame();});
+}
+
+// ── INPUT ─────────────────────────────────────────────────────
+function doJump(){
+  if(state==='idle'){initGame();return;}
+  if(state!=='running') return;
+  if(p.jumps<2){p.vy=-13;p.jumps++;burst(p.x+p.w/2,p.y+p.h,'#c8922a',6);}
+}
+document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();doJump();}});
+jumpBtn.addEventListener('touchstart',e=>{e.preventDefault();doJump();},{passive:false});
+jumpBtn.addEventListener('click',doJump);
+c.addEventListener('touchstart',e=>{e.preventDefault();doJump();},{passive:false});
+
+function updateLives(){livesEl.textContent='❤'.repeat(Math.max(0,lives));}
+
+function initGame(){
+  score=0;lives=3;frame=0;level=1;bonusScore=0;comboCount=0;comboTimer=0;
+  obstacles=[];collectibles=[];particles=[];floatTexts=[];
+  spawnT=80;collectT=60;bgWheelRot=0;
+  hi=parseInt(hiEl.textContent)||0;
+  resetP(); state='running';
+  msgEl.textContent='';
+  jumpBtn.textContent='🦘';
+  lvlEl.textContent='1'; lvlBadge.textContent='LEVEL 1'; lvlBar.style.width='0%';
+  updateLives();
+  const ov=document.getElementById('gameOverlay');
+  if(ov) ov.remove();
 }
 
 (function loop(){update();draw();requestAnimationFrame(loop);})();
